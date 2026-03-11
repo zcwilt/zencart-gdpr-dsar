@@ -1,0 +1,38 @@
+<?php
+
+$define = [
+    'NAVBAR_TITLE' => 'Privacy Data Requests',
+    'HEADING_TITLE' => 'GDPR / DSAR Requests',
+    'TEXT_INTRO' => 'Use this page to submit a request for your personal data export or data erasure. Requests are reviewed by an administrator.',
+    'TEXT_REQUEST_TYPE' => 'Request Type',
+    'TEXT_REQUEST_NOTES' => 'Notes (optional)',
+    'TEXT_SUBMIT_REQUEST' => 'Submit Request',
+    'TEXT_TYPE_EXPORT' => 'Export my personal data',
+    'TEXT_TYPE_ERASURE' => 'Erase/anonymize my personal data',
+    'TEXT_HISTORY_HEADING' => 'My Requests',
+    'TEXT_TABLE_ID' => 'ID',
+    'TEXT_TABLE_TYPE' => 'Type',
+    'TEXT_TABLE_STATUS' => 'Status',
+    'TEXT_TABLE_SUBMITTED' => 'Submitted',
+    'TEXT_TABLE_PROCESSED' => 'Processed',
+    'TEXT_TABLE_DOWNLOAD' => 'Download',
+    'TEXT_NO_REQUESTS' => 'No requests submitted yet.',
+    'TEXT_DOWNLOAD_EXPORT' => 'Download Export',
+    'TEXT_REQUEST_SUBMITTED' => 'Your request was submitted successfully.',
+    'TEXT_REQUEST_LIMIT_REACHED' => 'You already have the maximum number of active requests for this request type.',
+    'TEXT_REQUEST_TYPE_INVALID' => 'Invalid request type selected.',
+    'TEXT_EXPORT_NOT_AVAILABLE' => 'That export file is unavailable or has expired.',
+    'TEXT_PRIVACY_REQUEST_LINK' => 'Manage privacy data requests',
+    'TEXT_PRIVACY_POLICY_LINK' => 'Privacy Policy',
+    'TEXT_POLICY_ACTIVE_VERSION' => 'Active privacy policy version: %s',
+    'TEXT_POLICY_ACCEPTANCE_REQUIRED' => 'You must review and accept the current %s before submitting new DSAR requests.',
+    'TEXT_ACCEPT_CURRENT_POLICY' => 'Accept Current Privacy Policy',
+    'TEXT_POLICY_ACCEPTANCE_RECORDED' => 'Privacy policy acceptance has been recorded.',
+    'TEXT_POLICY_ACCEPTANCE_FAILED' => 'Unable to record policy acceptance at this time.',
+    'EMAIL_GDPR_DSAR_SUBMITTED_SUBJECT' => 'DSAR request received',
+    'EMAIL_GDPR_DSAR_SUBMITTED_BODY' => "Hello %s,\n\nWe have received your DSAR request (%s).\nRequest ID: %d\nStatus: submitted\n\nWe will review your request and notify you when its status changes.\n\nRegards,\n%s",
+    'EMAIL_GDPR_DSAR_ADMIN_NEW_SUBJECT' => 'New DSAR request submitted',
+    'EMAIL_GDPR_DSAR_ADMIN_NEW_BODY' => "A customer has submitted a DSAR request.\n\nRequest ID: %d\nCustomer ID: %d\nCustomer Email: %s\nRequest Type: %s\nSubmitted: %s\n\nReview this request in Admin -> Customers -> GDPR / DSAR Requests.",
+];
+
+return $define;
