@@ -8,7 +8,8 @@ if (!defined('GDPR_DSAR_ENABLE') || GDPR_DSAR_ENABLE !== 'true') {
 
 $action = $_GET['action'] ?? '';
 $requestId = (int)($_GET['request_id'] ?? 0);
-$statusFilter = preg_replace('/[^a-z_]/i', '', $_GET['status'] ?? 'uncompleted');
+$rawStatusFilter = $_GET['status'] ?? null;
+$statusFilter = $rawStatusFilter === null ? 'uncompleted' : preg_replace('/[^a-z_]/i', '', (string)$rawStatusFilter);
 $adminId = (int)($_SESSION['admin_id'] ?? 0);
 
 if (defined('TABLE_GDPR_DSAR_EXPORTS')) {
@@ -540,7 +541,7 @@ if ($requestId > 0 && in_array($action, ['approve', 'reject', 'process'], true))
 }
 
 $statuses = ['uncompleted', 'submitted', 'approved', 'processing', 'completed', 'rejected', 'failed'];
-if (!in_array($statusFilter, $statuses, true)) {
+if ($statusFilter !== '' && !in_array($statusFilter, $statuses, true)) {
     $statusFilter = 'uncompleted';
 }
 
