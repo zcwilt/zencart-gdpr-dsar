@@ -17,6 +17,8 @@ if (defined('TABLE_GDPR_DSAR_EXPORTS')) {
 
 function gdprDsarAdminAllowedPolicyTypes(): array
 {
+    // `terms` is retained for planned integration with checkout conditions,
+    // e.g. stores using DISPLAY_CONDITIONS_ON_CHECKOUT.
     return ['privacy', 'terms'];
 }
 
@@ -114,6 +116,48 @@ function gdprDsarAdminWriteAudit($db, int $requestId, int $customerId, int $admi
         ['fieldName' => 'date_added', 'value' => 'now()', 'type' => 'passthru'],
     ];
     $db->perform(TABLE_GDPR_DSAR_AUDIT_LOG, $sqlData);
+}
+
+function gdprDsarAdminGetSlaDays(): int
+{
+    return max(1, (int)(defined('GDPR_DSAR_SLA_DAYS') ? GDPR_DSAR_SLA_DAYS : 30));
+}
+
+function gdprDsarAdminCalculateDueDate(string $submittedAt, int $slaDays): string
+{
+    $timestamp = strtotime($submittedAt);
+    if ($timestamp === false) {
+        return '';
+    }
+
+    return date('Y-m-d H:i:s', $timestamp + ($slaDays * 86400));
+}
+
+function gdprDsarAdminGetSlaStatus(array $request, int $slaDays): string
+{
+    if (in_array((string)($request['status'] ?? ''), ['completed', 'rejected'], true)) {
+        return 'completed';
+    }
+
+    $submittedAt = (string)($request['date_submitted'] ?? '');
+    $submittedTs = strtotime($submittedAt);
+    if ($submittedTs === false) {
+        return 'on_track';
+    }
+
+    $dueTs = $submittedTs + ($slaDays * 86400);
+    $warningTs = $dueTs - 86400;
+    $now = time();
+
+    if ($now >= $dueTs) {
+        return 'overdue';
+    }
+
+    if ($now >= $warningTs) {
+        return 'due_soon';
+    }
+
+    return 'on_track';
 }
 
 function gdprDsarAdminAnonymizeOrders($db, int $customerId): void
@@ -514,6 +558,29 @@ $requests = $db->Execute(
     " ORDER BY request_id DESC"
 );
 
+$slaDays = gdprDsarAdminGetSlaDays();
+$slaSummary = [
+    'open' => 0,
+    'due_soon' => 0,
+    'overdue' => 0,
+];
+$requestRows = [];
+foreach ($requests as $row) {
+    $row['due_date'] = gdprDsarAdminCalculateDueDate((string)$row['date_submitted'], $slaDays);
+    $row['sla_status'] = gdprDsarAdminGetSlaStatus($row, $slaDays);
+
+    if (!in_array($row['status'], ['completed', 'rejected'], true)) {
+        $slaSummary['open']++;
+        if ($row['sla_status'] === 'due_soon') {
+            $slaSummary['due_soon']++;
+        } elseif ($row['sla_status'] === 'overdue') {
+            $slaSummary['overdue']++;
+        }
+    }
+
+    $requestRows[] = $row;
+}
+
 $policyVersions = [];
 if (defined('TABLE_GDPR_POLICY_VERSIONS')) {
     $policies = $db->Execute(
@@ -606,6 +673,38 @@ if (defined('TABLE_GDPR_POLICY_VERSIONS')) {
         </tbody>
     </table>
 
+    <h2><?= TEXT_SLA_SUMMARY_TITLE; ?></h2>
+    <div class="row" style="margin-bottom: 1.5rem;">
+        <div class="col-sm-3">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <strong><?= TEXT_SLA_TARGET; ?>:</strong> <?= sprintf(TEXT_SLA_TARGET_DAYS, $slaDays); ?>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <strong><?= TEXT_SLA_OPEN; ?>:</strong> <?= (int)$slaSummary['open']; ?>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="panel panel-warning">
+                <div class="panel-body">
+                    <strong><?= TEXT_SLA_DUE_SOON; ?>:</strong> <?= (int)$slaSummary['due_soon']; ?>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="panel panel-danger">
+                <div class="panel-body">
+                    <strong><?= TEXT_SLA_OVERDUE; ?>:</strong> <?= (int)$slaSummary['overdue']; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <form method="get" action="<?= zen_href_link(FILENAME_GDPR_DSAR_ADMIN); ?>" class="form-inline" style="margin-bottom: 1rem;">
         <input type="hidden" name="cmd" value="<?= FILENAME_GDPR_DSAR_ADMIN; ?>">
         <label for="status-filter"><?= TEXT_FILTER_STATUS; ?></label>
@@ -633,22 +732,43 @@ if (defined('TABLE_GDPR_POLICY_VERSIONS')) {
             <th><?= TEXT_REQUEST_TYPE; ?></th>
             <th><?= TEXT_STATUS; ?></th>
             <th><?= TEXT_SUBMITTED; ?></th>
+            <th><?= TEXT_DUE_DATE; ?></th>
+            <th><?= TEXT_SLA_STATUS; ?></th>
             <th><?= TEXT_NOTES; ?></th>
             <th><?= TEXT_ACTION; ?></th>
         </tr>
         </thead>
         <tbody>
-        <?php if ($requests->EOF): ?>
-            <tr><td colspan="8"><?= TEXT_NO_REQUESTS; ?></td></tr>
+        <?php if (empty($requestRows)): ?>
+            <tr><td colspan="10"><?= TEXT_NO_REQUESTS; ?></td></tr>
         <?php else: ?>
-            <?php foreach ($requests as $row): ?>
-                <tr>
+            <?php foreach ($requestRows as $row): ?>
+                <?php
+                $rowClass = '';
+                if ($row['sla_status'] === 'overdue') {
+                    $rowClass = 'danger';
+                } elseif ($row['sla_status'] === 'due_soon') {
+                    $rowClass = 'warning';
+                }
+
+                $slaText = TEXT_SLA_STATUS_ON_TRACK;
+                if ($row['sla_status'] === 'completed') {
+                    $slaText = TEXT_SLA_STATUS_COMPLETED;
+                } elseif ($row['sla_status'] === 'due_soon') {
+                    $slaText = TEXT_SLA_STATUS_DUE_SOON;
+                } elseif ($row['sla_status'] === 'overdue') {
+                    $slaText = TEXT_SLA_STATUS_OVERDUE;
+                }
+                ?>
+                <tr<?= ($rowClass !== '' ? ' class="' . $rowClass . '"' : ''); ?>>
                     <td><?= (int)$row['request_id']; ?></td>
                     <td><?= (int)$row['customers_id']; ?></td>
                     <td><?= zen_output_string_protected($row['customer_email_snapshot']); ?></td>
                     <td><?= zen_output_string_protected($row['request_type']); ?></td>
                     <td><?= zen_output_string_protected($row['status']); ?></td>
                     <td><?= zen_output_string_protected($row['date_submitted']); ?></td>
+                    <td><?= zen_output_string_protected($row['due_date']); ?></td>
+                    <td><strong><?= $slaText; ?></strong></td>
                     <td><?= $row['request_notes'] !== '' ? nl2br(zen_output_string_protected($row['request_notes'])) : TEXT_NONE; ?></td>
                     <td>
                         <?php if ($row['status'] === 'submitted'): ?>

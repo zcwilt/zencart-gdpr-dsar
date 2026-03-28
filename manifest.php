@@ -4,7 +4,7 @@ return [
     'pluginVersion' => 'v1.0.0',
     'pluginName' => 'GDPR / DSAR Manager',
     'pluginDescription' => 'Account-only DSAR request intake with admin-reviewed processing, export delivery, erasure workflows, and consent logging.',
-    'pluginAuthor' => 'Ian Wilson(Wilt)',
+    'pluginAuthor' => 'Local Implementation',
     'pluginId' => 0,
     'zcVersions' => [],
     'changelog' => '',

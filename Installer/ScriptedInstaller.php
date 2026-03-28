@@ -69,6 +69,14 @@ class ScriptedInstaller extends ScriptedInstallBase
             'set_function' => 'zen_cfg_select_option([\'true\', \'false\'],',
         ]);
 
+        $this->addConfigurationKey('GDPR_DSAR_SLA_DAYS', [
+            'configuration_title' => 'DSAR SLA Target (days)',
+            'configuration_value' => '30',
+            'configuration_description' => 'Target number of days to complete a DSAR request before it is considered overdue in admin monitoring.',
+            'configuration_group_id' => $cgi,
+            'sort_order' => 70,
+        ]);
+
         $this->executeInstallerSql(
             'CREATE TABLE IF NOT EXISTS ' . TABLE_GDPR_DSAR_REQUESTS . " (
                 request_id int(11) NOT NULL auto_increment,
@@ -187,6 +195,7 @@ class ScriptedInstaller extends ScriptedInstallBase
             'GDPR_DSAR_EXPORT_STORAGE_RELATIVE',
             'GDPR_DSAR_SEND_CUSTOMER_EMAILS',
             'GDPR_DSAR_NOTIFY_ADMIN_NEW_REQUEST',
+            'GDPR_DSAR_SLA_DAYS',
         ]);
 
         // Keep data tables by default to preserve compliance records.
