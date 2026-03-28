@@ -159,6 +159,7 @@ class ScriptedInstaller extends ScriptedInstallBase
                 KEY idx_gdpr_policy_type_active (policy_type, is_active)
             ) ENGINE=MyISAM"
         );
+        $this->seedBaselinePolicyVersion('privacy', '1.0', 'Seeded during install as the initial active privacy policy version.');
 
         zen_deregister_admin_pages([
             'configGdprDsar',
@@ -200,5 +201,30 @@ class ScriptedInstaller extends ScriptedInstallBase
                 define($constant, DB_PREFIX . $table);
             }
         }
+    }
+
+    private function seedBaselinePolicyVersion(string $policyType, string $versionLabel, string $notes = ''): void
+    {
+        $policyType = zen_db_input($policyType);
+        $versionLabel = zen_db_input($versionLabel);
+        $notes = zen_db_input($notes);
+
+        $check = $this->dbConn->Execute(
+            "SELECT policy_id
+               FROM " . TABLE_GDPR_POLICY_VERSIONS . "
+              WHERE policy_type = '" . $policyType . "'
+              LIMIT 1"
+        );
+
+        if (!$check->EOF) {
+            return;
+        }
+
+        $this->executeInstallerSql(
+            "INSERT INTO " . TABLE_GDPR_POLICY_VERSIONS . "
+                (policy_type, version_label, is_active, published_at, notes)
+             VALUES
+                ('" . $policyType . "', '" . $versionLabel . "', 1, now(), '" . $notes . "')"
+        );
     }
 }

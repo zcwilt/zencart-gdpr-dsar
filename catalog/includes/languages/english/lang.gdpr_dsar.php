@@ -31,6 +31,7 @@ $define = [
     'TEXT_PRIVACY_POLICY_LINK' => 'Privacy Policy',
     'TEXT_POLICY_ACTIVE_VERSION' => 'Active privacy policy version: %s',
     'TEXT_POLICY_ACCEPTANCE_REQUIRED' => 'You must review and accept the current %s before submitting new DSAR requests.',
+    'TEXT_POLICY_ACCEPTANCE_PROMPT' => 'Before you submit a new privacy request, please review and accept the current %s.',
     'TEXT_ACCEPT_CURRENT_POLICY' => 'Accept Current Privacy Policy',
     'TEXT_POLICY_ACCEPTANCE_RECORDED' => 'Privacy policy acceptance has been recorded.',
     'TEXT_POLICY_ACCEPTANCE_FAILED' => 'Unable to record policy acceptance at this time.',
