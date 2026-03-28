@@ -39,6 +39,32 @@ function gdprDsarCatalogWriteAudit($db, int $requestId, int $customerId, string 
     $db->perform(TABLE_GDPR_DSAR_AUDIT_LOG, $sqlData);
 }
 
+function gdprDsarPurgeExpiredExports($db): void
+{
+    if (!defined('TABLE_GDPR_DSAR_EXPORTS')) {
+        return;
+    }
+
+    $expired = $db->Execute(
+        "SELECT export_id, file_path
+           FROM " . TABLE_GDPR_DSAR_EXPORTS . "
+          WHERE expires_at <= now()"
+    );
+
+    foreach ($expired as $row) {
+        $filePath = (string)($row['file_path'] ?? '');
+        if ($filePath !== '' && file_exists($filePath)) {
+            @unlink($filePath);
+        }
+
+        $db->Execute(
+            "DELETE FROM " . TABLE_GDPR_DSAR_EXPORTS . "
+              WHERE export_id = " . (int)$row['export_id'] . "
+              LIMIT 1"
+        );
+    }
+}
+
 function gdprDsarGetActivePolicyVersion($db, string $policyType): string
 {
     if (!defined('TABLE_GDPR_POLICY_VERSIONS')) {
@@ -98,6 +124,9 @@ $gdprAcceptedPolicyVersion = gdprDsarGetLatestAcceptedPolicyVersion($db, $custom
 $gdprNeedsPolicyAcceptance = ($gdprActivePolicyVersion !== '' && $gdprAcceptedPolicyVersion !== $gdprActivePolicyVersion);
 $gdprPrivacyPolicyPage = defined('FILENAME_PRIVACY') ? FILENAME_PRIVACY : 'privacy';
 $gdprPrivacyPolicyLink = zen_href_link($gdprPrivacyPolicyPage, '', 'SSL');
+$gdprExportExpiryDays = (int)(defined('GDPR_DSAR_EXPORT_EXPIRY_DAYS') ? GDPR_DSAR_EXPORT_EXPIRY_DAYS : 14);
+
+gdprDsarPurgeExpiredExports($db);
 
 if ($action === 'download') {
     $token = preg_replace('/[^a-f0-9]/', '', strtolower($_GET['token'] ?? ''));

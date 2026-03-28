@@ -160,6 +160,11 @@ class ScriptedInstaller extends ScriptedInstallBase
             ) ENGINE=MyISAM"
         );
 
+        zen_deregister_admin_pages([
+            'configGdprDsar',
+            'toolsGdprDsar',
+        ]);
+        zen_register_admin_page('configGdprDsar', 'BOX_CONFIGURATION_GDPR_DSAR', 'FILENAME_CONFIGURATION', "gID=$cgi", 'configuration', 'Y');
         zen_register_admin_page('toolsGdprDsar', 'BOX_TOOLS_GDPR_DSAR', 'FILENAME_GDPR_DSAR_ADMIN', '', 'customers', 'Y');
 
         parent::executeInstall();
@@ -169,7 +174,10 @@ class ScriptedInstaller extends ScriptedInstallBase
     protected function executeUninstall()
     {
         $this->ensureTableConstants();
-        zen_deregister_admin_pages(['toolsGdprDsar']);
+        zen_deregister_admin_pages([
+            'configGdprDsar',
+            'toolsGdprDsar',
+        ]);
 
         $this->deleteConfigurationKeys([
             'GDPR_DSAR_ENABLE',

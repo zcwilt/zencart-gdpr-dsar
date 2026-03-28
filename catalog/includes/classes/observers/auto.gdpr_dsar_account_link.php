@@ -4,7 +4,10 @@ class zcObserverGdprDsarAccountLink extends base
 {
     public function __construct()
     {
-        $this->attach($this, ['NOTIFY_HEADER_END_ACCOUNT']);
+        $this->attach($this, [
+            'NOTIFY_HEADER_END_ACCOUNT',
+            'NOTIFY_ZEN_IS_LOGGED_IN',
+        ]);
     }
 
     public function updateNotifyHeaderEndAccount(&$class, $eventID, $paramsArray)
@@ -59,5 +62,61 @@ class zcObserverGdprDsarAccountLink extends base
         }
 
         $messageStack->add('account', $link, 'success');
+    }
+
+    public function updateNotifyZenIsLoggedIn(&$class, $eventID, $paramsArray, &$isLoggedIn)
+    {
+        global $db;
+
+        if ($isLoggedIn !== true) {
+            return;
+        }
+
+        $customerId = (int)($_SESSION['customer_id'] ?? 0);
+        if ($customerId <= 0) {
+            return;
+        }
+
+        $customer = $db->Execute(
+            "SELECT customers_id, customers_email_address, customers_password
+               FROM " . TABLE_CUSTOMERS . "
+              WHERE customers_id = " . $customerId . "
+              LIMIT 1"
+        );
+
+        if ($customer->EOF) {
+            $this->invalidateCustomerSession();
+            $isLoggedIn = false;
+            return;
+        }
+
+        $email = trim((string)($customer->fields['customers_email_address'] ?? ''));
+        $password = (string)($customer->fields['customers_password'] ?? '');
+
+        if (strtolower($email) === 'deleted' || $password === '') {
+            $this->invalidateCustomerSession();
+            $isLoggedIn = false;
+        }
+    }
+
+    private function invalidateCustomerSession(): void
+    {
+        unset(
+            $_SESSION['customer_id'],
+            $_SESSION['customer_first_name'],
+            $_SESSION['customer_last_name'],
+            $_SESSION['customer_default_address_id'],
+            $_SESSION['customer_country_id'],
+            $_SESSION['customer_zone_id'],
+            $_SESSION['customers_authorization'],
+            $_SESSION['customer_guest_id'],
+            $_SESSION['sendto'],
+            $_SESSION['billto'],
+            $_SESSION['cart_address_id']
+        );
+
+        if (isset($_SESSION['cart']) && is_object($_SESSION['cart']) && method_exists($_SESSION['cart'], 'reset')) {
+            $_SESSION['cart']->reset(true);
+        }
     }
 }

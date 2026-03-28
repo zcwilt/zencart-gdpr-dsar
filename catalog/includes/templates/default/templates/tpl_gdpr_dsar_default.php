@@ -10,6 +10,13 @@
 
     <div class="content" id="gdprDsarIntro">
         <p><?php echo TEXT_INTRO; ?></p>
+        <p><strong><?php echo sprintf(TEXT_EXPORT_RETENTION_NOTICE, (int)$gdprExportExpiryDays); ?></strong></p>
+    </div>
+
+    <div class="content" id="gdprDsarErasureWarning" style="border: 2px solid #b22222; background: #fff1f1; padding: 1rem; margin: 1rem 0;">
+        <h2 style="margin-top: 0; color: #8b0000;"><?php echo TEXT_ERASURE_WARNING_HEADING; ?></h2>
+        <p><strong><?php echo TEXT_ERASURE_WARNING_BODY; ?></strong></p>
+        <p style="margin-bottom: 0;"><?php echo TEXT_ERASURE_WARNING_DETAIL; ?></p>
     </div>
 
     <?php if (!empty($gdprActivePolicyVersion)): ?>
@@ -47,6 +54,9 @@
                 <input type="radio" name="request_type" value="erasure">
                 <?php echo TEXT_TYPE_ERASURE; ?>
             </label>
+            <div style="margin: 0.5rem 0 0 1.5rem; color: #8b0000; font-weight: bold;">
+                <?php echo TEXT_TYPE_ERASURE_NOTICE; ?>
+            </div>
         </fieldset>
 
         <p>

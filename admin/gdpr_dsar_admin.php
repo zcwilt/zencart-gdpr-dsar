@@ -11,6 +11,10 @@ $requestId = (int)($_GET['request_id'] ?? 0);
 $statusFilter = preg_replace('/[^a-z_]/i', '', $_GET['status'] ?? 'uncompleted');
 $adminId = (int)($_SESSION['admin_id'] ?? 0);
 
+if (defined('TABLE_GDPR_DSAR_EXPORTS')) {
+    gdprDsarAdminPurgeExpiredExports($db);
+}
+
 function gdprDsarAdminAllowedPolicyTypes(): array
 {
     return ['privacy', 'terms'];
@@ -74,6 +78,28 @@ function gdprDsarAdminGetExportDir(): string
     return rtrim($dir, '/') . '/';
 }
 
+function gdprDsarAdminPurgeExpiredExports($db): void
+{
+    $expired = $db->Execute(
+        "SELECT export_id, file_path
+           FROM " . TABLE_GDPR_DSAR_EXPORTS . "
+          WHERE expires_at <= now()"
+    );
+
+    foreach ($expired as $row) {
+        $filePath = (string)($row['file_path'] ?? '');
+        if ($filePath !== '' && file_exists($filePath)) {
+            @unlink($filePath);
+        }
+
+        $db->Execute(
+            "DELETE FROM " . TABLE_GDPR_DSAR_EXPORTS . "
+              WHERE export_id = " . (int)$row['export_id'] . "
+              LIMIT 1"
+        );
+    }
+}
+
 function gdprDsarAdminWriteAudit($db, int $requestId, int $customerId, int $adminId, string $actionKey, string $notes = ''): void
 {
     $ipHash = hash('sha256', (string)($_SERVER['REMOTE_ADDR'] ?? ''));
@@ -125,6 +151,31 @@ function gdprDsarAdminAnonymizeOrders($db, int $customerId): void
                    ip_address = ''
              WHERE customers_id = " . (int)$customerId;
     $db->Execute($sql);
+}
+
+function gdprDsarAdminAnonymizeAddressBook($db, int $customerId): void
+{
+    $db->Execute(
+        "UPDATE " . TABLE_ADDRESS_BOOK . "
+            SET entry_gender = '',
+                entry_company = '',
+                entry_firstname = '',
+                entry_lastname = 'deleted',
+                entry_street_address = 'deleted',
+                entry_suburb = '',
+                entry_postcode = '',
+                entry_city = 'deleted',
+                entry_state = '',
+                entry_country_id = 0,
+                entry_zone_id = 0
+          WHERE customers_id = " . (int)$customerId
+    );
+
+    $db->Execute(
+        "UPDATE " . TABLE_CUSTOMERS . "
+            SET customers_default_address_id = 0
+          WHERE customers_id = " . (int)$customerId
+    );
 }
 
 function gdprDsarAdminProcessExport($db, array $request, int $adminId): bool
@@ -232,6 +283,7 @@ function gdprDsarAdminProcessErasure($db, array $request, int $adminId): bool
     }
 
     $customer->delete(false, true);
+    gdprDsarAdminAnonymizeAddressBook($db, $customerId);
     gdprDsarAdminAnonymizeOrders($db, $customerId);
 
     $sql = "UPDATE " . TABLE_GDPR_DSAR_REQUESTS . "
