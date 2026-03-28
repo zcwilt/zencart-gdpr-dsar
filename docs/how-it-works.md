@@ -72,6 +72,20 @@ The plugin also registers:
 - a `Configuration` menu link to the plugin settings
 - a `Customers` menu link for the admin DSAR request queue
 
+## Policy Types
+
+The plugin currently supports two policy types in admin:
+
+- `privacy`
+- `terms`
+
+Current usage:
+
+- `privacy` is the active policy type used by the DSAR/customer acceptance flow.
+- `terms` is retained for planned integration with store terms-and-conditions acceptance, especially for stores using Zen Cart's `DISPLAY_CONDITIONS_ON_CHECKOUT`.
+
+At present, `terms` is stored and manageable in admin, but it is not yet enforced in the storefront DSAR flow the way `privacy` is.
+
 ## Storefront Flow
 
 ### 1. Customer opens the GDPR / DSAR page
