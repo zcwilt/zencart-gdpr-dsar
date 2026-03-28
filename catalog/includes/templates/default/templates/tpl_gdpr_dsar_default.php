@@ -118,5 +118,29 @@
         <?php endif; ?>
     </table>
 
+    <h2><?php echo TEXT_CONSENT_HISTORY_HEADING; ?></h2>
+    <table id="gdprConsentHistory" class="table">
+        <tr class="tableHeading">
+            <th><?php echo TEXT_TABLE_CONSENT_TYPE; ?></th>
+            <th><?php echo TEXT_TABLE_CONSENT_STATUS; ?></th>
+            <th><?php echo TEXT_TABLE_SOURCE; ?></th>
+            <th><?php echo TEXT_TABLE_POLICY_VERSION; ?></th>
+            <th><?php echo TEXT_TABLE_DATE; ?></th>
+        </tr>
+        <?php if (empty($consentEvents)): ?>
+            <tr><td colspan="5"><?php echo TEXT_NO_CONSENT_EVENTS; ?></td></tr>
+        <?php else: ?>
+            <?php foreach ($consentEvents as $event): ?>
+                <tr>
+                    <td><?php echo zen_output_string_protected($event['consent_type']); ?></td>
+                    <td><?php echo zen_output_string_protected($event['consent_status']); ?></td>
+                    <td><?php echo zen_output_string_protected($event['source_page']); ?></td>
+                    <td><?php echo zen_output_string_protected($event['policy_version']); ?></td>
+                    <td><?php echo zen_output_string_protected($event['date_added']); ?></td>
+                </tr>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </table>
+
     <div class="buttonRow back"><?php echo zen_back_link() . zen_image_button(BUTTON_IMAGE_BACK, BUTTON_BACK_ALT) . '</a>'; ?></div>
 </div>

@@ -279,3 +279,17 @@ foreach ($requests as $row) {
     );
     $dsarRequests[] = $row;
 }
+
+$consentEvents = [];
+if (defined('TABLE_GDPR_CONSENT_EVENTS')) {
+    $consents = $db->Execute(
+        "SELECT consent_type, consent_status, source_page, policy_version, date_added
+           FROM " . TABLE_GDPR_CONSENT_EVENTS . "
+          WHERE customers_id = " . $customerId . "
+          ORDER BY event_id DESC"
+    );
+
+    foreach ($consents as $row) {
+        $consentEvents[] = $row;
+    }
+}
