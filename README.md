@@ -24,6 +24,3 @@ GDPR / DSAR Manager is a Zen Cart plugin that adds customer-facing privacy reque
 - export files expire after the configured retention window and are removed automatically during normal DSAR page activity
 - the plugin currently uses the privacy policy flow directly, while `terms` support is retained for future checkout-conditions integration
 
-## Documentation
-
-Detailed technical documentation is available in [docs/how-it-works.md](docs/how-it-works.md).
