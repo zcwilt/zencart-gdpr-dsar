@@ -159,6 +159,7 @@ if ($action === 'download') {
           WHERE export_id = " . (int)$export->fields['export_id']
     );
 
+    ob_clean(); // Discard any data in the output buffer
     header('Content-Type: application/zip');
     header('Content-Disposition: attachment; filename="gdpr-dsar-export-' . (int)$export->fields['export_id'] . '.zip"');
     header('Content-Length: ' . (int)$export->fields['file_size']);
