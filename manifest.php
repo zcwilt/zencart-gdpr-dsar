@@ -8,6 +8,6 @@ return [
     'pluginId' => 2435,
     'zcVersions' => [],
     'changelog' => '',
-    'github_repo' => '',
+    'github_repo' => 'https://github.com/zcwilt/zencart-gdpr-dsar',
     'pluginGroups' => ['privacy', 'compliance'],
 ];
