@@ -41,7 +41,7 @@ class GdprDsarPluginInstallTest extends zcInProcessFeatureTestCaseAdmin
 
         $this->submitAdminForm($response, 'plugininstall')
             ->assertOk()
-            ->assertSee('Version Installed:</strong> v1.0.0');
+            ->assertSee('Version Installed:</strong> v1.0.2');
 
         $this->visitAdminCommand('gdpr_dsar_admin')
             ->assertOk()

@@ -1,0 +1,111 @@
+name: Plugin Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+  GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+  ZC_CORE_REPOSITORY: zcwilt/zencart
+  ZC_CORE_REF: feature/local-plugin-testing
+  ZC_PLUGIN_NAME: gdpr-dsar
+  ZC_PLUGIN_VERSION: v1.0.2
+  ZC_TEST_RUNNER_IMAGE: ghcr.io/zencart/zencart-test-runner
+
+jobs:
+  plugin-tests:
+    name: PHP ${{ matrix.php-version }} Plugin Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+
+    strategy:
+      matrix:
+        php-version:
+          - "8.4"
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: db
+          MYSQL_USER: db
+          MYSQL_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=6
+
+    steps:
+      - name: Checkout Plugin
+        uses: actions/checkout@v4
+        with:
+          path: plugin
+
+      - name: Checkout Zen Cart
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.ZC_CORE_REPOSITORY }}
+          ref: ${{ env.ZC_CORE_REF }}
+          path: zencart
+
+      - name: Install Plugin Into Zen Cart
+        run: |
+          mkdir -p "zencart/zc_plugins/${ZC_PLUGIN_NAME}/${ZC_PLUGIN_VERSION}"
+          rsync -a --delete \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            plugin/ "zencart/zc_plugins/${ZC_PLUGIN_NAME}/${ZC_PLUGIN_VERSION}/"
+
+      - name: Login to GHCR
+        if: ${{ env.GHCR_TOKEN != '' }}
+        run: |
+          echo "${GHCR_TOKEN}" | docker login ghcr.io \
+            -u "${GHCR_USERNAME:-${GITHUB_ACTOR}}" \
+            --password-stdin
+
+      - name: Install Zen Cart Dependencies
+        run: |
+          docker run --rm \
+            --network host \
+            -v "${GITHUB_WORKSPACE}/zencart:/var/www/html" \
+            -w /var/www/html \
+            "${ZC_TEST_RUNNER_IMAGE}:php-${{ matrix.php-version }}" \
+            composer install --no-progress --no-interaction --no-ansi --no-scripts
+
+      - name: Update And Patch Vendored Dependencies
+        run: |
+          docker run --rm \
+            --network host \
+            -v "${GITHUB_WORKSPACE}/zencart:/var/www/html" \
+            -w /var/www/html \
+            "${ZC_TEST_RUNNER_IMAGE}:php-${{ matrix.php-version }}" \
+            sh -c 'composer update --no-progress --no-interaction --no-ansi --no-scripts && sh not_for_release/testFramework/copyVendorFiles.sh'
+
+      - name: Run Plugin Tests
+        run: |
+          docker run --rm \
+            --network host \
+            -v "${GITHUB_WORKSPACE}/zencart:/var/www/html" \
+            -w /var/www/html \
+            -e ZC_TEST_DB_BASE_NAME=db \
+            -e ZC_TEST_DB_WORKERS=2 \
+            -e ZC_TEST_DB_INCLUDE_BASE=0 \
+            "${ZC_TEST_RUNNER_IMAGE}:php-${{ matrix.php-version }}" \
+            composer tests-plugin -- --plugin "${ZC_PLUGIN_NAME}"
+
+      - name: Upload Test Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: plugin-test-artifacts-php-${{ matrix.php-version }}
+          path: zencart/not_for_release/testFramework/logs/console
+          if-no-files-found: ignore
+          retention-days: 30
