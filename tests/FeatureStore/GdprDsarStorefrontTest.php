@@ -2,16 +2,15 @@
 
 namespace Tests\PluginLocal\GdprDsar\FeatureStore;
 
+use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\Database\TestDb;
 use Tests\Support\Traits\CustomerAccountConcerns;
 use Tests\Support\Traits\PluginLocalTestConcerns;
 use Tests\Support\zcInProcessFeatureTestCaseStore;
 
-/**
- * @group serial
- * @group customer-account-write
- * @group plugin-filesystem
- */
+#[Group('serial')]
+#[Group('customer-account-write')]
+#[Group('plugin-filesystem')]
 class GdprDsarStorefrontTest extends zcInProcessFeatureTestCaseStore
 {
     use CustomerAccountConcerns;

@@ -2,14 +2,13 @@
 
 namespace Tests\PluginLocal\GdprDsar\FeatureAdmin;
 
+use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\Traits\PluginLocalTestConcerns;
 use Tests\Support\zcInProcessFeatureTestCaseAdmin;
 
-/**
- * @group serial
- * @group custom-seeder
- * @group plugin-filesystem
- */
+#[Group('serial')]
+#[Group('custom-seeder')]
+#[Group('plugin-filesystem')]
 class GdprDsarPluginInstallTest extends zcInProcessFeatureTestCaseAdmin
 {
     use PluginLocalTestConcerns;
@@ -25,6 +24,8 @@ class GdprDsarPluginInstallTest extends zcInProcessFeatureTestCaseAdmin
 
     public function testInstallPluginAndOpenAdminQueue(): void
     {
+        $expectedVersion = $this->currentPluginVersion();
+
         $this->runCustomSeeder('StoreWizardSeeder');
         $this->submitAdminLogin([
             'admin_name' => 'Admin',
@@ -41,7 +42,7 @@ class GdprDsarPluginInstallTest extends zcInProcessFeatureTestCaseAdmin
 
         $this->submitAdminForm($response, 'plugininstall')
             ->assertOk()
-            ->assertSee('Version Installed:</strong> v1.0.2');
+            ->assertSee('Version Installed:</strong> ' . $expectedVersion);
 
         $this->visitAdminCommand('gdpr_dsar_admin')
             ->assertOk()
@@ -54,5 +55,12 @@ class GdprDsarPluginInstallTest extends zcInProcessFeatureTestCaseAdmin
         $this->submitAdminForm($response, 'pluginuninstall')
             ->assertOk()
             ->assertSee('action=install');
+    }
+
+    private function currentPluginVersion(): string
+    {
+        $manifest = require dirname(__DIR__, 2) . '/manifest.php';
+
+        return $manifest['pluginVersion'];
     }
 }

@@ -2,15 +2,14 @@
 
 namespace Tests\PluginLocal\GdprDsar\FeatureAdmin;
 
+use PHPUnit\Framework\Attributes\Group;
 use Tests\Support\Database\TestDb;
 use Tests\Support\Traits\PluginLocalTestConcerns;
 use Tests\Support\zcInProcessFeatureTestCaseAdmin;
 
-/**
- * @group serial
- * @group custom-seeder
- * @group plugin-filesystem
- */
+#[Group('serial')]
+#[Group('custom-seeder')]
+#[Group('plugin-filesystem')]
 class GdprDsarAdminQueueTest extends zcInProcessFeatureTestCaseAdmin
 {
     use PluginLocalTestConcerns;
@@ -120,6 +119,7 @@ class GdprDsarAdminQueueTest extends zcInProcessFeatureTestCaseAdmin
         $this->runCustomSeeder('StoreWizardSeeder');
         $this->installCurrentPluginThroughInstaller(__FILE__);
         $this->disableDsarEmails();
+        $this->resetDsarRequestTables();
     }
 
     private function loginAsAdmin(): void
@@ -142,6 +142,13 @@ class GdprDsarAdminQueueTest extends zcInProcessFeatureTestCaseAdmin
                 ':adminEmails' => 'GDPR_DSAR_NOTIFY_ADMIN_NEW_REQUEST',
             ]
         );
+    }
+
+    private function resetDsarRequestTables(): void
+    {
+        foreach (['gdpr_dsar_exports', 'gdpr_dsar_audit_log', 'gdpr_dsar_requests'] as $table) {
+            TestDb::pdo()->exec('DELETE FROM ' . DB_PREFIX . $table);
+        }
     }
 
     private function seedSubmittedExportRequest(
