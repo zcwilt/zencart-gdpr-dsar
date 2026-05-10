@@ -11,7 +11,6 @@ env:
   ZC_CORE_REPOSITORY: zcwilt/zencart
   ZC_CORE_REF: feature/local-plugin-testing
   ZC_PLUGIN_NAME: gdpr-dsar
-  ZC_PLUGIN_VERSION: v1.0.2
   ZC_TEST_RUNNER_IMAGE: ghcr.io/zencart/zencart-test-runner
 
 jobs:
@@ -56,8 +55,19 @@ jobs:
           ref: ${{ env.ZC_CORE_REF }}
           path: zencart
 
+      - name: Resolve Plugin Version
+        working-directory: plugin
+        run: |
+          PLUGIN_VERSION="$(php -r '$manifest = require "manifest.php"; echo $manifest["pluginVersion"] ?? "";')"
+          if [ -z "${PLUGIN_VERSION}" ]; then
+            echo "Unable to resolve pluginVersion from manifest.php" >&2
+            exit 1
+          fi
+          echo "ZC_PLUGIN_VERSION=${PLUGIN_VERSION}" >> "${GITHUB_ENV}"
+
       - name: Install Plugin Into Zen Cart
         run: |
+          rm -rf "zencart/zc_plugins/${ZC_PLUGIN_NAME}"
           mkdir -p "zencart/zc_plugins/${ZC_PLUGIN_NAME}/${ZC_PLUGIN_VERSION}"
           rsync -a --delete \
             --exclude '.git/' \

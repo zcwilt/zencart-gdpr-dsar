@@ -24,8 +24,6 @@ class GdprDsarPluginInstallTest extends zcInProcessFeatureTestCaseAdmin
 
     public function testInstallPluginAndOpenAdminQueue(): void
     {
-        $expectedVersion = $this->currentPluginVersion();
-
         $this->runCustomSeeder('StoreWizardSeeder');
         $this->submitAdminLogin([
             'admin_name' => 'Admin',
@@ -39,6 +37,9 @@ class GdprDsarPluginInstallTest extends zcInProcessFeatureTestCaseAdmin
         $response = $this->visitAdminCommand('plugin_manager&page=1&colKey=gdpr-dsar&action=install')
             ->assertOk()
             ->assertSee('GDPR / DSAR Manager');
+
+        $expectedVersion = (string) ($response->formDefaults('plugininstall')['version'] ?? '');
+        $this->assertNotSame('', $expectedVersion, 'Expected plugin-install form to include a selected version.');
 
         $this->submitAdminForm($response, 'plugininstall')
             ->assertOk()
@@ -55,12 +56,5 @@ class GdprDsarPluginInstallTest extends zcInProcessFeatureTestCaseAdmin
         $this->submitAdminForm($response, 'pluginuninstall')
             ->assertOk()
             ->assertSee('action=install');
-    }
-
-    private function currentPluginVersion(): string
-    {
-        $manifest = require dirname(__DIR__, 2) . '/manifest.php';
-
-        return $manifest['pluginVersion'];
     }
 }
